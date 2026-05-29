@@ -21,6 +21,7 @@
     body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.12) 2px,rgba(0,0,0,.12) 4px);pointer-events:none;z-index:1000}
     @keyframes flash{0%,100%{opacity:1}50%{opacity:.2}}
     @keyframes pulse{0%,100%{box-shadow:0 0 8px var(--neon-r)}50%{box-shadow:0 0 22px var(--neon-r)}}
+    @keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
     /* ── LAYOUT ── */
     #app{display:flex;flex-direction:column;align-items:center;height:100vh;padding:7px 12px;gap:5px}
@@ -32,10 +33,13 @@
 
     /* ── SCOREBAR ── */
     #scorebar{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:860px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:5px 14px;gap:8px}
-    .phud{display:flex;flex-direction:column;gap:2px;min-width:120px}
+    .phud{display:flex;flex-direction:column;gap:3px;min-width:120px}
     .phud .name{font-size:10px;font-weight:700;letter-spacing:1px}
     .p1c{color:var(--p1);text-shadow:0 0 8px var(--p1)}.p2c{color:var(--p2);text-shadow:0 0 8px var(--p2)}
     .phud .sc{font-family:var(--fp);font-size:16px}
+    .lives{display:flex;gap:3px;align-items:center}
+    .heart{font-size:10px;transition:all .2s}
+    .heart.lost{opacity:.18;filter:grayscale(1)}
     #chud{display:flex;flex-direction:column;align-items:center;gap:2px}
     #tlbl{font-size:7px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase}
     #tdisp{font-size:10px;font-weight:700;transition:color .3s}
@@ -50,21 +54,29 @@
     #gc{display:block}
 
     /* ── CONTROLS ── */
-    #controls{display:flex;align-items:center;gap:10px;width:100%;max-width:860px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:7px 14px}
+    #controls{display:flex;align-items:center;gap:12px;width:100%;max-width:860px;background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:7px 14px}
     #jwrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0}
     #jlbl{font-size:7px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
-    #jc{cursor:crosshair;border-radius:50%}
-    #aimstats{display:flex;flex-direction:column;gap:5px;flex:1;min-width:90px}
-    .srow{display:flex;flex-direction:column;gap:1px}
+    #jc{cursor:none;border-radius:50%}
+    #aimstats{display:flex;flex-direction:column;gap:6px;flex-shrink:0;min-width:80px}
+    .srow{display:flex;flex-direction:column;gap:2px}
     .slbl{font-size:7px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
-    .sval{font-family:var(--fp);font-size:12px}
-    #dangle{color:var(--neon-y)} #dvel{color:var(--neon-g)}
-    #wwrap{display:flex;flex-direction:column;align-items:center;gap:2px}
+    .sval{font-family:var(--fp);font-size:11px}
+    #dangle{color:var(--neon-y)}
+    /* velocity slider area */
+    #velwrap{display:flex;flex-direction:column;gap:4px;flex:1}
+    #vellbl{font-size:7px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+    #velrow{display:flex;align-items:center;gap:8px}
+    #velslider{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none;cursor:pointer}
+    #velslider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--neon-g);box-shadow:0 0 8px var(--neon-g);cursor:pointer}
+    #velslider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--neon-g);box-shadow:0 0 8px var(--neon-g);cursor:pointer;border:none}
+    #velnum{font-family:var(--fp);font-size:11px;color:var(--neon-g);min-width:32px;text-align:right}
+    #wwrap{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
     #wlbl{font-size:7px;color:var(--text-dim);letter-spacing:1px}
     #wbar{width:70px;height:7px;background:var(--border);border-radius:4px;position:relative;overflow:hidden}
     #wfill{position:absolute;top:0;height:100%;border-radius:4px;transition:all .4s}
     #wval{font-family:var(--fp);font-size:8px;color:var(--neon-o)}
-    #throwbtn{background:linear-gradient(135deg,var(--neon-r),#c00040);border:none;color:#fff;font-family:var(--fp);font-size:9px;padding:10px 16px;border-radius:5px;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px var(--neon-r);transition:transform .1s,box-shadow .1s;white-space:nowrap;min-width:78px}
+    #throwbtn{background:linear-gradient(135deg,var(--neon-r),#c00040);border:none;color:#fff;font-family:var(--fp);font-size:9px;padding:10px 16px;border-radius:5px;cursor:pointer;letter-spacing:1px;box-shadow:0 0 12px var(--neon-r);transition:transform .1s,box-shadow .1s;white-space:nowrap;min-width:78px;flex-shrink:0}
     #throwbtn:hover:not(:disabled){transform:scale(1.05);box-shadow:0 0 20px var(--neon-r)}
     #throwbtn:active:not(:disabled){transform:scale(.97)}
     #throwbtn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
@@ -73,28 +85,13 @@
     #overlay,#setupmodal{position:fixed;inset:0;z-index:500}
     #overlay{background:rgba(0,0,10,.88);backdrop-filter:blur(4px)}
     #setupmodal{display:flex;align-items:center;justify-content:center;z-index:501}
-    #setupbox{background:var(--panel);border:1px solid var(--neon-b);border-radius:10px;padding:26px 34px;width:440px;box-shadow:0 0 40px rgba(0,200,255,.15);max-height:90vh;overflow-y:auto}
+    #setupbox{background:var(--panel);border:1px solid var(--neon-b);border-radius:10px;padding:26px 34px;width:360px;box-shadow:0 0 40px rgba(0,200,255,.15);max-height:90vh;overflow-y:auto}
     #setupbox h2{font-family:var(--fp);font-size:12px;color:var(--neon-y);text-align:center;margin-bottom:20px;text-shadow:0 0 10px var(--neon-y)}
     .sf{margin-bottom:12px}
     .sf label{display:block;font-size:8px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;text-transform:uppercase}
     .sf input[type=text],.sf input[type=number],.sf select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--fh);font-size:13px;padding:7px 10px;border-radius:4px;outline:none;transition:border-color .2s}
     .sf input:focus,.sf select:focus{border-color:var(--neon-b);box-shadow:0 0 8px rgba(0,200,255,.2)}
     .sdiv{border:none;border-top:1px solid var(--border);margin:12px 0}
-    /* Sprite section label */
-    .sec-lbl{font-size:8px;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
-    /* Sprite grid */
-    .sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
-    .sslot{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg);border:1px dashed var(--border);border-radius:6px;padding:7px 4px;cursor:pointer;transition:border-color .2s}
-    .sslot:hover{border-color:var(--neon-b)}
-    .sslot img{width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
-    .sslot span{font-size:6px;color:var(--text-dim);text-align:center;letter-spacing:.5px;line-height:1.4}
-    .sslot input[type=file]{display:none}
-    /* BG slot */
-    .bgslot{width:100%;display:flex;align-items:center;gap:10px;background:var(--bg);border:1px dashed var(--border);border-radius:6px;padding:8px 12px;cursor:pointer;transition:border-color .2s;margin-bottom:12px}
-    .bgslot:hover{border-color:var(--neon-g)}
-    .bgslot img{width:48px;height:28px;object-fit:cover;border-radius:3px}
-    .bgslot span{font-size:7px;color:var(--text-dim);letter-spacing:1px;flex:1}
-    .bgslot input[type=file]{display:none}
     #playbtn{width:100%;background:linear-gradient(135deg,var(--neon-g),#00a866);border:none;color:var(--bg);font-family:var(--fp);font-size:10px;padding:12px;border-radius:6px;cursor:pointer;letter-spacing:2px;box-shadow:0 0 16px var(--neon-g);transition:transform .1s}
     #playbtn:hover{transform:scale(1.03)} #playbtn:active{transform:scale(.97)}
 
@@ -102,7 +99,7 @@
     #winsplash{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,10,.72);z-index:200;flex-direction:column;gap:14px}
     #winsplash.show{display:flex}
     #wintitle{font-family:var(--fp);font-size:clamp(12px,2.2vw,20px);color:var(--neon-y);text-shadow:0 0 20px var(--neon-y);animation:flash .6s infinite;text-align:center;padding:0 10px}
-    #winsub{font-size:10px;color:var(--text-dim);letter-spacing:2px}
+    #winsub{font-size:10px;color:var(--text-dim);letter-spacing:2px;text-align:center}
     #winnextbtn{background:var(--neon-y);border:none;color:var(--bg);font-family:var(--fp);font-size:9px;padding:10px 20px;border-radius:4px;cursor:pointer}
 
     /* ── AI BUBBLE ── */
@@ -116,7 +113,6 @@
 <div id="setupmodal">
   <div id="setupbox">
     <h2>🦍 GORILLAS</h2>
-
     <div class="sf">
       <label>Seu Nome</label>
       <input type="text" id="p1name" value="PLAYER" maxlength="16" />
@@ -129,75 +125,11 @@
         <option value="hard">Difícil — mira certeira</option>
       </select>
     </div>
-
     <hr class="sdiv" />
-
-    <div class="sf">
-      <label>Rodadas (1–20)</label>
-      <input type="number" id="roundsInput" value="5" min="1" max="20" />
-    </div>
     <div class="sf">
       <label>Gravidade (1–30)</label>
       <input type="number" id="gravInput" value="17" min="1" max="30" />
     </div>
-
-    <hr class="sdiv" />
-
-    <!-- SPRITES -->
-    <div class="sec-lbl">Sprites dos Gorilas (opcional)</div>
-    <div class="sgrid">
-      <label class="sslot">
-        <img id="pv-idle1" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Crect x='4' y='12' width='22' height='20' fill='%237a5c3a'/%3E%3Crect x='5' y='0' width='20' height='14' fill='%237a5c3a'/%3E%3Crect x='4' y='30' width='9' height='10' fill='%237a5c3a'/%3E%3Crect x='17' y='30' width='9' height='10' fill='%237a5c3a'/%3E%3C/svg%3E" />
-        <span>P1<br>PARADO</span>
-        <input type="file" id="f-idle1" accept="image/*" />
-      </label>
-      <label class="sslot">
-        <img id="pv-ready1" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Crect x='4' y='12' width='22' height='20' fill='%237a5c3a'/%3E%3Crect x='5' y='0' width='20' height='14' fill='%237a5c3a'/%3E%3Crect x='-4' y='2' width='12' height='6' fill='%239a7a5a'/%3E%3Crect x='17' y='30' width='9' height='10' fill='%237a5c3a'/%3E%3C/svg%3E" />
-        <span>P1<br>PRONTO</span>
-        <input type="file" id="f-ready1" accept="image/*" />
-      </label>
-      <label class="sslot">
-        <img id="pv-throw1" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Crect x='4' y='12' width='22' height='20' fill='%237a5c3a'/%3E%3Crect x='5' y='0' width='20' height='14' fill='%237a5c3a'/%3E%3Crect x='-8' y='0' width='12' height='6' fill='%239a7a5a'/%3E%3C/svg%3E" />
-        <span>P1<br>ARREMESSO</span>
-        <input type="file" id="f-throw1" accept="image/*" />
-      </label>
-      <label class="sslot">
-        <img id="pv-dead1" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 20'%3E%3Crect x='0' y='6' width='40' height='14' fill='%237a5c3a'/%3E%3Crect x='4' y='0' width='14' height='10' fill='%237a5c3a'/%3E%3C/svg%3E" />
-        <span>P1<br>DERROTADO</span>
-        <input type="file" id="f-dead1" accept="image/*" />
-      </label>
-      <label class="sslot">
-        <img id="pv-idle2" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Crect x='4' y='12' width='22' height='20' fill='%235a3a2a'/%3E%3Crect x='5' y='0' width='20' height='14' fill='%235a3a2a'/%3E%3Crect x='4' y='30' width='9' height='10' fill='%235a3a2a'/%3E%3Crect x='17' y='30' width='9' height='10' fill='%235a3a2a'/%3E%3C/svg%3E" />
-        <span>IA<br>PARADO</span>
-        <input type="file" id="f-idle2" accept="image/*" />
-      </label>
-      <label class="sslot">
-        <img id="pv-throw2" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Crect x='4' y='12' width='22' height='20' fill='%235a3a2a'/%3E%3Crect x='5' y='0' width='20' height='14' fill='%235a3a2a'/%3E%3Crect x='26' y='0' width='12' height='6' fill='%237a5a3a'/%3E%3C/svg%3E" />
-        <span>IA<br>ARREMESSO</span>
-        <input type="file" id="f-throw2" accept="image/*" />
-      </label>
-    </div>
-
-    <!-- Banana + BG -->
-    <div class="sgrid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
-      <label class="sslot">
-        <img id="pv-banana" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='7' fill='%23ffe600'/%3E%3C/svg%3E" />
-        <span>BANANA</span>
-        <input type="file" id="f-banana" accept="image/*" />
-      </label>
-      <label class="sslot">
-        <img id="pv-exp" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Ccircle cx='15' cy='15' r='12' fill='%23ff8c00' opacity='.7'/%3E%3Ccircle cx='15' cy='15' r='7' fill='%23ffe600'/%3E%3C/svg%3E" />
-        <span>EXPLOSÃO</span>
-        <input type="file" id="f-exp" accept="image/*" />
-      </label>
-    </div>
-
-    <label class="bgslot">
-      <img id="pv-bg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 28'%3E%3Crect width='48' height='28' fill='%230a0a20'/%3E%3Ccircle cx='24' cy='8' r='5' fill='%23ffe600'/%3E%3C/svg%3E" />
-      <span>🖼 PLANO DE FUNDO — clique para carregar</span>
-      <input type="file" id="f-bg" accept="image/*" />
-    </label>
-
     <button id="playbtn">▶ JOGAR vs IA</button>
   </div>
 </div>
@@ -218,7 +150,11 @@
   <div id="scorebar">
     <div class="phud">
       <div class="name p1c" id="hup1">PLAYER</div>
-      <div class="sc p1c"   id="sc1">0</div>
+      <div class="lives" id="lives1">
+        <span class="heart" id="h1-0">❤️</span>
+        <span class="heart" id="h1-1">❤️</span>
+        <span class="heart" id="h1-2">❤️</span>
+      </div>
     </div>
     <div id="chud">
       <div id="tlbl">VEZ DE</div>
@@ -227,7 +163,11 @@
     </div>
     <div class="phud" style="align-items:flex-end">
       <div class="name p2c" id="hup2">🤖 IA</div>
-      <div class="sc p2c"   id="sc2">0</div>
+      <div class="lives" id="lives2" style="flex-direction:row-reverse">
+        <span class="heart" id="h2-0">❤️</span>
+        <span class="heart" id="h2-1">❤️</span>
+        <span class="heart" id="h2-2">❤️</span>
+      </div>
     </div>
   </div>
 
@@ -244,14 +184,24 @@
   </div>
 
   <div id="controls">
+    <!-- Joystick de mira -->
     <div id="jwrap">
       <div id="jlbl">MIRA</div>
       <canvas id="jc" width="90" height="90"></canvas>
     </div>
+    <!-- Ângulo display -->
     <div id="aimstats">
       <div class="srow"><span class="slbl">Ângulo</span><span class="sval" id="dangle">45°</span></div>
-      <div class="srow"><span class="slbl">Velocidade</span><span class="sval" id="dvel">80</span></div>
     </div>
+    <!-- Barra de velocidade -->
+    <div id="velwrap">
+      <div id="vellbl">Velocidade</div>
+      <div id="velrow">
+        <input type="range" id="velslider" min="10" max="200" value="80" />
+        <span id="velnum">80</span>
+      </div>
+    </div>
+    <!-- Vento -->
     <div id="wwrap">
       <div id="wlbl">VENTO</div>
       <div id="wbar"><div id="wfill"></div></div>
@@ -266,56 +216,23 @@
 
 /* ════════════════════════════════
    SPRITES
-   Pasta: static/assets/
-   Arquivos esperados (se não fizer upload):
-     gorilla_idle.png, gorilla_ready.png, gorilla_throw.png, gorilla_defeated.png
-     gorilla2_idle.png, gorilla2_throw.png
-     banana.png, background.png
 ════════════════════════════════ */
 const BASE = "/static/assets/";
-
-function mkImg(src) {
-  const img = new Image();
-  img.src = src;
-  return img;
-}
-
-// Tentativa de carregar sprites da pasta assets
+function mkImg(src){ const i=new Image(); i.src=src; return i; }
 const SP = {
-  idle1:    mkImg(BASE + "gorilla_idle.png"),
-  ready1:   mkImg(BASE + "gorilla_ready.png"),
-  throw1:   mkImg(BASE + "gorilla_throw.png"),
-  dead1:    mkImg(BASE + "gorilla_defeated.png"),
-  idle2:    mkImg(BASE + "gorilla2_idle.png"),
-  throw2:   mkImg(BASE + "gorilla2_throw.png"),
-  banana:   mkImg(BASE + "banana.png"),
-  exp:      null,
-  bg:       mkImg(BASE + "background.png"),
+  idle1:  mkImg(BASE+"gorilla_idle.png"),
+  ready1: mkImg(BASE+"gorilla_ready.png"),
+  throw1: mkImg(BASE+"gorilla_throw.png"),
+  dead1:  mkImg(BASE+"gorilla_defeated.png"),
+  idle2:  mkImg(BASE+"gorilla2_idle.png"),
+  ready2: mkImg(BASE+"gorilla2_ready.png"),
+  throw2: mkImg(BASE+"gorilla2_throw.png"),
+  dead2:  mkImg(BASE+"gorilla2_defeated.png"),
+  banana: mkImg(BASE+"banana.png"),
+  exp:    null,
+  bg:     mkImg(BASE+"background.png"),
 };
-
-// Se carregar via upload no setup, substitui
-function bindUpload(inputId, key, previewId) {
-  document.getElementById(inputId).addEventListener("change", e => {
-    const f = e.target.files[0]; if (!f) return;
-    const url = URL.createObjectURL(f);
-    const img = new Image();
-    img.onload = () => { SP[key] = img; document.getElementById(previewId).src = url; };
-    img.src = url;
-  });
-}
-bindUpload("f-idle1",  "idle1",  "pv-idle1");
-bindUpload("f-ready1", "ready1", "pv-ready1");
-bindUpload("f-throw1", "throw1", "pv-throw1");
-bindUpload("f-dead1",  "dead1",  "pv-dead1");
-bindUpload("f-idle2",  "idle2",  "pv-idle2");
-bindUpload("f-throw2", "throw2", "pv-throw2");
-bindUpload("f-banana", "banana", "pv-banana");
-bindUpload("f-exp",    "exp",    "pv-exp");
-bindUpload("f-bg",     "bg",     "pv-bg");
-
-function imgReady(img) {
-  return img && img.complete && img.naturalWidth > 0;
-}
+function imgReady(img){ return img&&img.complete&&img.naturalWidth>0; }
 
 /* ════════════════════════════════
    CANVAS / CTX
@@ -324,19 +241,18 @@ const canvas = document.getElementById("gc");
 const ctx    = canvas.getContext("2d");
 
 /* ════════════════════════════════
-   JOYSTICK
+   JOYSTICK — segue mouse/touch
 ════════════════════════════════ */
 const jcan = document.getElementById("jc");
 const jctx = jcan.getContext("2d");
 const JR = 45, KR = 13;
+const joy = { dx:0, dy:-1, angle:90, power:80 };
 
-const joy = { active:false, dx:0, dy:0, angle:45, power:80 };
-
-function drawJoy() {
+function drawJoy(){
   jctx.clearRect(0,0,jcan.width,jcan.height);
-  const cx = JR, cy = JR;
-  const kx = cx + joy.dx*(JR-KR-4);
-  const ky = cy + joy.dy*(JR-KR-4);
+  const cx=JR, cy=JR;
+  const kx=cx+joy.dx*(JR-KR-4);
+  const ky=cy+joy.dy*(JR-KR-4);
 
   // Outer ring
   jctx.beginPath(); jctx.arc(cx,cy,JR-2,0,Math.PI*2);
@@ -354,55 +270,84 @@ function drawJoy() {
   jctx.beginPath(); jctx.moveTo(cx,cy); jctx.lineTo(kx,ky); jctx.stroke();
 
   // Knob
-  const g = jctx.createRadialGradient(kx,ky,2,kx,ky,KR);
+  const g=jctx.createRadialGradient(kx,ky,2,kx,ky,KR);
   g.addColorStop(0,"#00eeff"); g.addColorStop(1,"#004888");
   jctx.beginPath(); jctx.arc(kx,ky,KR,0,Math.PI*2);
   jctx.fillStyle=g;
-  jctx.shadowColor="#00c8ff"; jctx.shadowBlur=joy.active?16:6;
+  jctx.shadowColor="#00c8ff"; jctx.shadowBlur=10;
   jctx.fill(); jctx.shadowBlur=0;
 }
 
-function jPos(e) {
-  const r = jcan.getBoundingClientRect();
-  const t = e.touches ? e.touches[0] : e;
-  return {x:t.clientX-r.left, y:t.clientY-r.top};
-}
-
-function updateJoy(x,y) {
+function setJoyFromXY(x,y){
   let dx=(x-JR)/(JR-KR-4), dy=(y-JR)/(JR-KR-4);
   const d=Math.sqrt(dx*dx+dy*dy);
   if(d>1){dx/=d;dy/=d;}
   joy.dx=dx; joy.dy=dy;
 
-  let ang = Math.atan2(-dy,dx)*180/Math.PI;
-  ang = ((ang%360)+360)%360;
-  if(ang>180&&ang<360) ang = ang>270 ? 360-ang : 180;
+  let ang=Math.atan2(-dy,dx)*180/Math.PI;
+  ang=((ang%360)+360)%360;
+  if(ang>180) ang=ang>270?360-ang:180;
+  joy.angle=Math.round(ang);
 
-  joy.angle = Math.round(ang);
-  joy.power = Math.min(200, Math.round(20 + Math.max(0.2,d)*180));
-
-  document.getElementById("dangle").textContent = joy.angle+"°";
-  document.getElementById("dvel").textContent   = joy.power;
+  document.getElementById("dangle").textContent=joy.angle+"°";
   drawJoy();
 }
 
-jcan.addEventListener("mousedown",  e=>{ if(st.phase!=="playing"||st.curP!==0)return; joy.active=true; const p=jPos(e); updateJoy(p.x,p.y); });
-jcan.addEventListener("touchstart", e=>{ e.preventDefault(); if(st.phase!=="playing"||st.curP!==0)return; joy.active=true; const p=jPos(e); updateJoy(p.x,p.y); },{passive:false});
-window.addEventListener("mousemove", e=>{ if(!joy.active)return; const p=jPos(e); updateJoy(p.x,p.y); });
-window.addEventListener("touchmove", e=>{ if(!joy.active)return; const p=jPos(e); updateJoy(p.x,p.y); },{passive:false});
-window.addEventListener("mouseup",  ()=>joy.active=false);
-window.addEventListener("touchend", ()=>joy.active=false);
-drawJoy();
+// Mouse hover no canvas do jogo: joystick segue a direção do mouse em relação ao gorila P1
+canvas.addEventListener("mousemove", e=>{
+  if(st.phase!=="playing"||st.curP!==0||!st.gorillas[0]) return;
+  const r=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/r.width;
+  const mx=(e.clientX-r.left)*scaleX;
+  const my=(e.clientY-r.top)*scaleX;
+  const g=st.gorillas[0];
+  const gx=g.x+15, gy=g.y+5;
+  const dx=mx-gx, dy=gy-my; // dy invertido (canvas y cresce pra baixo)
+  const len=Math.sqrt(dx*dx+dy*dy);
+  if(len<5) return;
+  const ang=Math.atan2(dy,dx)*180/Math.PI;
+  const clamped=Math.max(0,Math.min(180,Math.round(ang)));
+  joy.angle=clamped;
+  // Mapear no joystick visual
+  const ndx=dx/len, ndy=-dy/len; // ndy: inverte para canvas joystick
+  joy.dx=ndx; joy.dy=ndy;
+  document.getElementById("dangle").textContent=joy.angle+"°";
+  drawJoy();
+});
+
+// Touch no joystick canvas (mobile)
+function jPos(e){
+  const r=jcan.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  return{x:t.clientX-r.left,y:t.clientY-r.top};
+}
+let jTouchActive=false;
+jcan.addEventListener("mousedown",  e=>{ if(st.phase!=="playing"||st.curP!==0)return; jTouchActive=true; setJoyFromXY(jPos(e).x,jPos(e).y); });
+jcan.addEventListener("touchstart", e=>{ e.preventDefault(); if(st.phase!=="playing"||st.curP!==0)return; jTouchActive=true; setJoyFromXY(jPos(e).x,jPos(e).y); },{passive:false});
+window.addEventListener("mousemove", e=>{ if(!jTouchActive)return; setJoyFromXY(jPos(e).x,jPos(e).y); });
+window.addEventListener("touchmove", e=>{ if(!jTouchActive)return; setJoyFromXY(jPos(e).x,jPos(e).y); },{passive:false});
+window.addEventListener("mouseup",  ()=>jTouchActive=false);
+window.addEventListener("touchend", ()=>jTouchActive=false);
+
+// Velocity slider
+const velSlider=document.getElementById("velslider");
+const velNum=document.getElementById("velnum");
+velSlider.addEventListener("input",()=>{
+  joy.power=parseInt(velSlider.value);
+  velNum.textContent=joy.power;
+});
 
 /* ════════════════════════════════
    STATE
 ════════════════════════════════ */
-const st = {
-  phase:"setup",          // setup|playing|animating|roundover|gameover
+const MAX_LIVES=3;
+const st={
+  phase:"setup",
   buildings:[], gorillas:[],
   wind:0, gravity:17,
-  scores:[0,0], curP:0,
-  round:1, totalRounds:5,
+  lives:[MAX_LIVES,MAX_LIVES],
+  curP:0,
+  round:1,
   names:["PLAYER","🤖 IA"],
   aiDiff:"medium",
   trajectory:[], trjIdx:0,
@@ -410,8 +355,7 @@ const st = {
   bananaAngle:0, explosion:null,
   sunMouth:"happy",
   groundY:480, sunX:400, sunY:60,
-  // gorilla visual state per player
-  gState:["idle","idle"],  // idle|ready|throw|dead
+  gState:["idle","idle"],
 };
 
 /* ── DOM ── */
@@ -430,7 +374,7 @@ const aiBubble  = document.getElementById("aibubble");
 /* ════════════════════════════════
    DRAW HELPERS
 ════════════════════════════════ */
-function clear() {
+function clear(){
   if(imgReady(SP.bg)){
     ctx.drawImage(SP.bg,0,0,canvas.width,canvas.height);
     ctx.fillStyle="rgba(0,0,20,.42)"; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -466,7 +410,7 @@ function drawBuildings(){
 }
 
 function drawSun(mood){
-  const sx=st.sunX, sy=st.sunY, r=22;
+  const sx=st.sunX,sy=st.sunY,r=22;
   ctx.shadowColor="#ffe600"; ctx.shadowBlur=30;
   ctx.fillStyle="#ffe600"; ctx.beginPath(); ctx.arc(sx,sy,r,0,Math.PI*2); ctx.fill();
   ctx.strokeStyle="#ffe600"; ctx.lineWidth=2;
@@ -487,10 +431,9 @@ function drawSun(mood){
   }
 }
 
-/* gorilla canvas fallback */
 function drawGorillaCanvas(gx,gy,state,pIdx){
-  const col = pIdx===0?"#7a5c3a":"#5a3a2a";
-  const hi  = pIdx===0?"#9a7a5a":"#7a5a3a";
+  const col=pIdx===0?"#7a5c3a":"#5a3a2a";
+  const hi =pIdx===0?"#9a7a5a":"#7a5a3a";
   ctx.fillStyle=col;
   if(state==="dead"){
     ctx.fillRect(gx,gy+20,40,14); ctx.fillRect(gx+4,gy+14,14,10); return;
@@ -499,38 +442,41 @@ function drawGorillaCanvas(gx,gy,state,pIdx){
   ctx.fillRect(gx+4,gy+30,9,10); ctx.fillRect(gx+17,gy+30,9,10);
   ctx.fillStyle=hi;
   if(state==="throw"){
-    if(pIdx===0){ ctx.fillRect(gx-8,gy,12,6); ctx.fillRect(gx+26,gy+12,10,6); }
-    else        { ctx.fillRect(gx+26,gy,12,6); ctx.fillRect(gx-8,gy+12,10,6); }
+    if(pIdx===0){ctx.fillRect(gx-8,gy,12,6);ctx.fillRect(gx+26,gy+12,10,6);}
+    else        {ctx.fillRect(gx+26,gy,12,6);ctx.fillRect(gx-8,gy+12,10,6);}
   } else if(state==="ready"){
-    if(pIdx===0){ ctx.fillRect(gx-4,gy+2,12,6); ctx.fillRect(gx+26,gy+14,12,6); }
-    else        { ctx.fillRect(gx+20,gy+2,12,6); ctx.fillRect(gx-8,gy+14,12,6); }
+    if(pIdx===0){ctx.fillRect(gx-4,gy+2,12,6);ctx.fillRect(gx+26,gy+14,12,6);}
+    else        {ctx.fillRect(gx+20,gy+2,12,6);ctx.fillRect(gx-8,gy+14,12,6);}
   } else {
     ctx.fillRect(gx-8,gy+14,12,6); ctx.fillRect(gx+26,gy+14,12,6);
   }
   ctx.fillStyle="#1a0a00";
   ctx.fillRect(gx+8,gy+3,5,2); ctx.fillRect(gx+17,gy+3,5,2);
   ctx.fillRect(gx+9,gy+8,12,2);
-  ctx.fillStyle="rgba(255,255,255,.07)";
-  ctx.beginPath(); ctx.arc(gx+15,gy+18,7,0,Math.PI*2); ctx.fill();
   ctx.strokeStyle=pIdx===0?"rgba(0,200,255,.5)":"rgba(255,60,90,.5)";
   ctx.lineWidth=1; ctx.shadowColor=pIdx===0?"#00c8ff":"#ff3c5a"; ctx.shadowBlur=8;
   ctx.strokeRect(gx+4,gy,22,40); ctx.shadowBlur=0;
 }
 
 function drawGorilla(gx,gy,gstate,pIdx){
-  // Choose sprite based on state
-  let img = null;
+  let img=null;
   if(pIdx===0){
     if(gstate==="idle")    img=SP.idle1;
     else if(gstate==="ready") img=SP.ready1;
     else if(gstate==="throw") img=SP.throw1;
     else if(gstate==="dead")  img=SP.dead1;
   } else {
-    if(gstate==="throw")   img=SP.throw2;
-    else                   img=SP.idle2;
+    if(gstate==="idle")    img=SP.idle2;
+    else if(gstate==="ready") img=SP.ready2;
+    else if(gstate==="throw") img=SP.throw2;
+    else if(gstate==="dead")  img=SP.dead2;
   }
   if(imgReady(img)){
-    ctx.drawImage(img,gx,gy,30,40);
+    if(gstate==="dead"){
+      ctx.drawImage(img,gx-10,gy+10,70,45);
+    } else {
+      ctx.drawImage(img,gx-5,gy-10,50,65);
+    }
   } else {
     drawGorillaCanvas(gx,gy,gstate,pIdx);
   }
@@ -600,10 +546,10 @@ function drawTrajectoryPreview(){
   ctx.strokeStyle="rgba(0,230,255,.65)"; ctx.lineWidth=2;
   ctx.shadowColor="#00c8ff"; ctx.shadowBlur=6;
   ctx.beginPath(); ctx.moveTo(sx,sy);
-  ctx.lineTo(sx+Math.cos(rad)*arlen, sy-Math.sin(rad)*arlen); ctx.stroke();
+  ctx.lineTo(sx+Math.cos(rad)*arlen,sy-Math.sin(rad)*arlen); ctx.stroke();
   ctx.shadowBlur=0;
   ctx.fillStyle="#ffe600"; ctx.font="bold 11px Orbitron,monospace";
-  ctx.fillText(ang+"°", sx+6, sy-16);
+  ctx.fillText(ang+"°",sx+6,sy-16);
 }
 
 function renderFrame(){
@@ -619,7 +565,7 @@ function renderFrame(){
 }
 
 /* ════════════════════════════════
-   ANIMATION LOOP  (banana lenta)
+   ANIMATION LOOP
 ════════════════════════════════ */
 let raf=null;
 function startLoop(){
@@ -645,18 +591,31 @@ function startLoop(){
 }
 
 /* ════════════════════════════════
+   LIVES HUD
+════════════════════════════════ */
+function updateLivesHUD(){
+  [0,1].forEach(p=>{
+    for(let i=0;i<MAX_LIVES;i++){
+      const el=document.getElementById(`h${p+1}-${i}`);
+      el.classList.toggle("lost", i>=st.lives[p]);
+    }
+  });
+}
+
+/* ════════════════════════════════
    GAME LOGIC
 ════════════════════════════════ */
 async function startNewGame(){
-  st.names[0] = document.getElementById("p1name").value.trim().toUpperCase()||"PLAYER";
-  st.names[1] = "🤖 IA";
-  st.aiDiff   = document.getElementById("aiDiff").value;
-  st.gravity  = parseInt(document.getElementById("gravInput").value)||17;
-  st.totalRounds = parseInt(document.getElementById("roundsInput").value)||5;
-  st.scores=[0,0]; st.round=1;
+  st.names[0]=document.getElementById("p1name").value.trim().toUpperCase()||"PLAYER";
+  st.names[1]="🤖 IA";
+  st.aiDiff=document.getElementById("aiDiff").value;
+  st.gravity=parseInt(document.getElementById("gravInput").value)||17;
+  st.lives=[MAX_LIVES,MAX_LIVES];
+  st.round=1;
   document.getElementById("hup1").textContent=st.names[0];
   document.getElementById("hup2").textContent=st.names[1];
-  updateScoreHUD(); await loadRound();
+  updateLivesHUD();
+  await loadRound();
 }
 
 async function loadRound(){
@@ -679,8 +638,6 @@ async function doThrow(angle,velocity){
   if(st.phase!=="playing") return;
   st.phase="animating"; throwBtn.disabled=true;
   const p=st.curP, g=st.gorillas[p];
-
-  // Animate gorilla state: ready → throw
   st.gState[p]="ready";
   await delay(350);
   st.gState[p]="throw";
@@ -702,27 +659,31 @@ function finishThrow(wasHit){
 
   if(wasHit&&st.hitResult&&st.hitResult.startsWith("gorilla")){
     const hitIdx=parseInt(st.hitResult.replace("gorilla",""))-1;
-    const scorer=hitIdx===st.curP?(1-st.curP):st.curP;
-    // Mark dead gorilla
+    // hitIdx é quem levou; o atirador é o outro
     st.gState[hitIdx]="dead";
-    st.scores[scorer]++;
-    updateScoreHUD();
+    st.lives[hitIdx]--;
+    updateLivesHUD();
 
-    const max=Math.ceil(st.totalRounds/2)+1;
-    if(st.scores[scorer]>=max||st.round>=st.totalRounds){
-      showWin(scorer,false); st.phase="gameover"; return;
+    if(st.lives[hitIdx]<=0){
+      // Acabaram as vidas — game over
+      const winner=1-hitIdx;
+      showWin(winner,false);
+      st.phase="gameover";
+      return;
     }
+
+    // Ainda tem vidas — próxima rodada
     st.round++;
-    showWin(scorer,true); st.phase="roundover";
+    const attacker=1-hitIdx;
+    showWin(attacker,true);
+    st.phase="roundover";
   } else {
-    // Reset throw state
     st.gState[st.curP]="idle";
     st.curP=1-st.curP;
     updateTurnHUD();
     st.phase="playing";
 
     if(st.curP===1){
-      // AI turn
       throwBtn.disabled=true;
       showMsg("🤖 IA pensando...");
       aiBubble.textContent="🤖 Calculando...";
@@ -732,29 +693,24 @@ function finishThrow(wasHit){
         try{
           const res=await fetch("/api/ai_throw",{
             method:"POST",headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-              gorillas:st.gorillas, buildings:st.buildings,
-              wind:st.wind, gravity:st.gravity, difficulty:st.aiDiff,
-            }),
+            body:JSON.stringify({gorillas:st.gorillas,buildings:st.buildings,wind:st.wind,gravity:st.gravity,difficulty:st.aiDiff}),
           });
           const d=await res.json();
           const comment=d.comment||"";
           aiBubble.textContent="🤖 "+(comment||`Ângulo ${d.angle}° | Vel ${d.velocity}`);
           if(comment) showMsg(`🤖 "${comment}"`);
           else showMsg(`🤖 IA lança — ângulo ${d.angle}°, velocidade ${d.velocity}`);
-
           await delay(700);
           aiBubble.style.display="none";
+          st.gState[1]="ready";
+          await delay(350);
           await doThrow(d.angle,d.velocity);
         }catch(e){
           aiBubble.style.display="none";
           console.error("AI throw error",e);
-          // Fallback local
-          const angle=Math.round(100+Math.random()*60);
-          const velocity=Math.round(60+Math.random()*80);
-          await doThrow(angle,velocity);
+          await doThrow(Math.round(100+Math.random()*60),Math.round(60+Math.random()*80));
         }
-      }, 800+Math.random()*600);
+      },800+Math.random()*600);
     } else {
       throwBtn.disabled=false;
       showMsg(`🎯 ${st.names[0]}, é sua vez!`);
@@ -768,11 +724,12 @@ function showWin(winner,roundOnly){
   const n=st.names[winner];
   if(roundOnly){
     winTitle.textContent=`🎉 ${n} VENCEU A RODADA!`;
-    winSub.textContent=`Placar: ${st.scores[0]} × ${st.scores[1]} — Clique para continuar`;
+    const l0=st.lives[0], l1=st.lives[1];
+    winSub.innerHTML=`Vidas: ${st.names[0]} ${'❤️'.repeat(l0)}${'🖤'.repeat(MAX_LIVES-l0)} &nbsp; ${st.names[1]} ${'❤️'.repeat(l1)}${'🖤'.repeat(MAX_LIVES-l1)}<br>Clique para continuar`;
     winNext.textContent="PRÓXIMA RODADA ▶";
   } else {
-    winTitle.textContent=`🏆 ${n} CAMPEÃO!`;
-    winSub.textContent=`Placar final: ${st.scores[0]} × ${st.scores[1]}`;
+    winTitle.textContent=`🏆 ${n} VENCEU O JOGO!`;
+    winSub.textContent=`O adversário perdeu todas as vidas!`;
     winNext.textContent="NOVA PARTIDA ▶";
   }
   winSplash.classList.add("show");
@@ -784,10 +741,6 @@ winNext.addEventListener("click",()=>{
   else loadRound();
 });
 
-function updateScoreHUD(){
-  document.getElementById("sc1").textContent=st.scores[0];
-  document.getElementById("sc2").textContent=st.scores[1];
-}
 function updateTurnHUD(){
   tdisp.textContent=st.names[st.curP];
   tdisp.style.color=st.curP===0?"var(--p1)":"var(--p2)";
@@ -815,14 +768,16 @@ document.getElementById("newgamebtn").addEventListener("click",async()=>{ winSpl
 throwBtn.addEventListener("click",()=>{ if(st.phase!=="playing"||st.curP!==0)return; doThrow(joy.angle,joy.power); });
 document.addEventListener("keydown",e=>{
   if(st.phase!=="playing"||st.curP!==0)return;
-  if(e.key==="Enter"||e.key===" ") doThrow(joy.angle,joy.power);
+  if(e.key==="Enter"||e.key===" "){ e.preventDefault(); doThrow(joy.angle,joy.power); }
   if(e.key==="ArrowLeft")  joy.angle=Math.max(0,  joy.angle-1);
   if(e.key==="ArrowRight") joy.angle=Math.min(180,joy.angle+1);
-  if(e.key==="ArrowUp")    joy.power=Math.min(200,joy.power+2);
-  if(e.key==="ArrowDown")  joy.power=Math.max(10, joy.power-2);
-  if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)){
+  if(e.key==="ArrowUp")    { joy.power=Math.min(200,joy.power+2); velSlider.value=joy.power; velNum.textContent=joy.power; }
+  if(e.key==="ArrowDown")  { joy.power=Math.max(10, joy.power-2); velSlider.value=joy.power; velNum.textContent=joy.power; }
+  if(["ArrowLeft","ArrowRight"].includes(e.key)){
     document.getElementById("dangle").textContent=joy.angle+"°";
-    document.getElementById("dvel").textContent=joy.power;
+    // Atualiza visual do joystick
+    const rad=joy.angle*Math.PI/180;
+    joy.dx=Math.cos(rad); joy.dy=-Math.sin(rad);
     drawJoy();
   }
 });
