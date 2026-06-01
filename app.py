@@ -130,50 +130,57 @@ def _sim_trajectory(sx, sy, angle_deg, velocity, wind, gravity):
 
 def _fallback_aim(ai_pos, target_pos, wind, gravity, difficulty):
     """
-    Busca exaustiva de ângulo usando a mesma equação física do backend.
-    O jogador 2 lança para a esquerda; o backend já aplica (180 - angle),
-    portanto buscamos o ângulo *antes* do espelhamento.
+    Busca exaustiva de ângulo/velocidade usando a física exata do calculate_trajectory.
+    O jogador 2 recebe o ângulo 'a' que depois é espelhado: effective = 180 - a.
+    sx deve ser ai_pos["x"] + 15 - 5 = ai_pos["x"] + 10  (igual ao backend:
+        start_x = gorilla_x = g.x+15, depois sx = start_x + (-5) para player 2).
     """
-    # Ponto de lançamento do gorila 2 (igual ao usado em calculate_trajectory p/ player=2)
-    sx = ai_pos["x"] + (-5)   # player_num==2 → sx = start_x - 5
+    # Ponto de lançamento idêntico ao calculate_trajectory com player_num=2:
+    # start_x = gorilla["x"] + 15  (enviado pelo frontend)
+    # sx      = start_x + (-5) = gorilla["x"] + 10
+    sx = ai_pos["x"] + 10
     sy = ai_pos["y"] + 5
-    tx = target_pos["x"] + 15  # centro do gorila alvo
-    ty = target_pos["y"] + 20
 
-    dist = math.hypot(target_pos["x"] - ai_pos["x"], target_pos["y"] - ai_pos["y"])
-    # Estima velocidade inicial proporcional à distância
-    vel_base = max(50, min(190, dist * 0.55 + 20))
+    # Centro do gorila alvo (hitbox: x-5..x+30, y-5..y+36)
+    tx = target_pos["x"] + 12
+    ty = target_pos["y"] + 15
 
-    best_angle  = 135
-    best_dist   = float("inf")
-    best_vel    = vel_base
+    dx   = target_pos["x"] - ai_pos["x"]   # negativo (alvo à esquerda)
+    dist = math.hypot(dx, target_pos["y"] - ai_pos["y"])
 
-    # Busca em grade de ângulo × velocidade
-    for a in range(5, 176, 2):
-        # O backend espelha: effective_angle = 180 - a para player 2
-        eff_angle = 180 - a
-        for vel_mult in (0.85, 1.0, 1.15):
-            vel = vel_base * vel_mult
-            rad = eff_angle * math.pi / 180
-            vx  = math.cos(rad) * vel
-            vy  = math.sin(rad) * vel
-            t   = 0.0
+    # Grade de velocidades proporcional à distância — mais larga para não errar
+    vel_center = max(60, min(185, abs(dx) * 0.60 + 30))
+    velocities = [vel_center * m for m in (0.75, 0.88, 1.0, 1.12, 1.25)]
+
+    best_angle = 135
+    best_dist  = float("inf")
+    best_vel   = vel_center
+
+    for a in range(5, 176, 1):          # passo de 1° — mais preciso
+        eff_angle = 180 - a             # espelhamento aplicado pelo backend
+        rad = eff_angle * math.pi / 180
+        for vel in velocities:
+            vx = math.cos(rad) * vel
+            vy = math.sin(rad) * vel
+            t  = 0.0
             for _ in range(1000):
-                t  += DT
-                x   = sx + vx*t + 0.5*(wind/5)*t**2
-                y   = sy - (vy*t - 0.5*gravity*t**2) * SCALE_Y
+                t += DT
+                x = sx + vx * t + 0.5 * (wind / 5) * t * t
+                y = sy - (vy * t - 0.5 * gravity * t * t) * SCALE_Y
                 if x < -30 or x > CANVAS_W + 30 or y >= GROUND_Y:
                     break
-                d = math.hypot(x - tx, y - ty)
-                if d < best_dist:
-                    best_dist  = d
-                    best_angle = a
-                    best_vel   = vel
+                # Só mede distância quando a banana está na faixa vertical do alvo
+                if ty - 60 <= y <= ty + 60:
+                    d = math.hypot(x - tx, y - ty)
+                    if d < best_dist:
+                        best_dist  = d
+                        best_angle = a
+                        best_vel   = vel
 
-    errors = {"easy": 28, "medium": 10, "hard": 2}
-    err = errors.get(difficulty, 10)
+    errors = {"easy": 30, "medium": 8, "hard": 1}
+    err = errors.get(difficulty, 8)
     final_a = max(5,  min(175, round(best_angle + random.uniform(-err, err))))
-    final_v = max(20, min(200, round(best_vel   + random.uniform(-err * 2, err * 2))))
+    final_v = max(20, min(200, round(best_vel   + random.uniform(-err * 3, err * 3))))
     return final_a, final_v, ""
 
 
@@ -255,46 +262,32 @@ def ai_throw():
     dx   = target_pos["x"] - ai_pos["x"]   # negativo (alvo à esquerda)
     dist = math.hypot(dx, target_pos["y"] - ai_pos["y"])
 
-    # Calcula fallback antes de chamar a IA (garante valores válidos)
+    # Física local calcula ângulo/velocidade — sempre confiável
     angle, velocity, comment = _fallback_aim(ai_pos, target_pos, wind, gravity, difficulty)
 
-    # Contexto físico para o modelo
-    prompt = f"""Você é o jogador 2 de Gorillas (o clássico jogo do DOS).
-Você está no lado DIREITO do mapa. Seu gorila está em x={ai_pos['x']}, y={ai_pos['y']}.
-O alvo (jogador humano) está em x={target_pos['x']}, y={target_pos['y']}.
-Distância horizontal: {abs(dx):.0f} pixels (alvo à SUA ESQUERDA).
-Vento: {wind} (positivo = empurra para a direita, negativo = para a esquerda).
-Gravidade: {gravity}. Canvas: {CANVAS_W}x{CANVAS_H}. Dificuldade: {difficulty}.
-
-Regras físicas exatas:
-- O backend espelha o ângulo: angulo_efetivo = 180 - angle_informado.
-- Informe o ângulo como se fosse lançar para a DIREITA (o espelhamento é automático).
-- Velocidade entre 20 e 200. Quanto maior a distância, maior a velocidade necessária.
-- Para dist≈{abs(dx):.0f}px, velocidade sugerida ≈ {min(200,max(20,abs(dx)*0.55+20)):.0f}.
-- Ângulo sugerido pelo fallback: {angle}° vel: {velocity}.
-
-Responda SOMENTE com JSON válido neste formato:
-{{"angle": <inteiro 5-175>, "velocity": <inteiro 20-200>, "comment": "<frase curta de provocação em português>"}}"""
-
+    # Groq gera apenas a provocação (flavor text)
+    prompt = (
+        f"Você é a IA gorila vilã de um jogo de arremesso de bananas. "
+        f"Dificuldade: {difficulty}. Distância ao alvo: {abs(dx):.0f}px. "
+        f"Gere UMA frase curta de provocação em português (max 10 palavras), sarcástica. "
+        f'Responda SOMENTE com JSON: {{"comment": "<frase>"}}'
+    )
     try:
         if GROQ_CLIENT.api_key:
             resp = GROQ_CLIENT.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-                max_tokens=120,
+                temperature=0.9,
+                max_tokens=60,
             )
             raw = resp.choices[0].message.content.strip()
-            # Strip markdown fences se presentes
             if raw.startswith("```"):
                 raw = raw.split("```")[1]
                 if raw.startswith("json"): raw = raw[4:]
-            parsed   = json.loads(raw)
-            angle    = max(5,  min(175, int(parsed["angle"])))
-            velocity = max(20, min(200, int(parsed["velocity"])))
-            comment  = parsed.get("comment", "")
+            parsed  = json.loads(raw)
+            comment = parsed.get("comment", "")
     except Exception as e:
-        print(f"[Groq fallback] {e}")
+        print(f"[Groq comment] {e}")
 
     return jsonify({"angle": angle, "velocity": velocity, "comment": comment})
 
